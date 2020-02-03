@@ -14,10 +14,16 @@ data Test = Test
   } deriving (Show, Eq)
 $(deriveStorable ''Test)
 
+data TestEmpty = TestEmpty deriving (Show, Eq)
+$(deriveStorable ''TestEmpty)
+
 main :: IO ()
-main = assertEqual "Storable failed" (V.toList (V.fromList d)) d
+main = do
+  assertEqual "Storable failed" (V.toList (V.fromList a)) a
+  assertEqual "Storable failed" (V.toList (V.fromList b)) b
  where
-  d = take 100 $ cycle
+  a = take 100 $ cycle
     [ Test 9 10 9.8 10.3 50
     , Test (-600) 1000 6083021.2341 134729184732.41894321 143278
     ]
+  b = replicate 10 TestEmpty

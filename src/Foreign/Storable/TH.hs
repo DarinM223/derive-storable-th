@@ -17,11 +17,13 @@ deriveStorable name = do
     _                    -> do
       reportError $ "Type " ++ show name ++
         " not single constructor data or newtype"
-      undefined
-  let (conName, ts) = case con of
-        NormalC name' ts' -> (name', ts')
-        RecC name' ts'    -> (name', (\(_, a, b) -> (a, b)) <$> ts')
-        _                 -> error "Invalid constructor"
+      return $ NormalC name []
+  (conName, ts) <- case con of
+    NormalC name' ts' -> pure (name', ts')
+    RecC name' ts'    -> pure (name', (\(_, a, b) -> (a, b)) <$> ts')
+    _                 -> do
+      reportError "Constructor not record or normal constructor"
+      return (name, [])
   [d|
     instance Storable $(conT name) where
       sizeOf _ = $(sizeOf' ts)
@@ -42,11 +44,11 @@ deriveStorable name = do
   alignment' ts = [| maximum $(foldr cons [| [] |] $ fmap toSizeOf ts) |]
 
   peek' :: Name -> [BangType] -> Q Exp
+  peek' con [] = LamE [WildP] <$> [| return $(conE con) |]
   peek' con ts = do ptr <- newName "ptr"
                     LamE [VarP ptr] <$> peek'' ptr con ts
 
   peek'' :: Name -> Name -> [BangType] -> Q Exp
-  peek'' _ con [] = conE con
   peek'' ptr con ts0 =
     go [| 0 |] [| $(conE con) <$> peekByteOff $(varE ptr) 0 |] (init ts0)
    where
@@ -56,6 +58,7 @@ deriveStorable name = do
      where offset' = [| $offset + $(toSizeOf t) |]
 
   poke' :: Name -> [BangType] -> Q Exp
+  poke' _ []   = LamE [WildP, WildP] <$> [| return () |]
   poke' con ts = do ptr <- newName "ptr"
                     t <- newName "t"
                     LamE [VarP ptr, VarP t] <$> poke'' ptr t con ts
