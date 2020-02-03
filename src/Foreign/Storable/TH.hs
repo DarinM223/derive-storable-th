@@ -1,11 +1,10 @@
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE TemplateHaskell #-}
-{-# LANGUAGE ScopedTypeVariables #-}
 module Foreign.Storable.TH where
 
 import Prelude hiding (exp)
 import Data.Foldable (foldl')
-import Foreign.Storable
+import Foreign.Storable (Storable (..))
 import Language.Haskell.TH
 import Language.Haskell.TH.Syntax
 
@@ -64,11 +63,11 @@ deriveStorable name = do
   poke'' :: Name -> Name -> Name -> [BangType] -> Q Exp
   poke'' ptr t con ts0 = do
     names <- traverse (\_ -> newName "temp") ts0
-    let
-      initData =
-        ([| 0 |], [[| pokeByteOff $(varE ptr) 0 $(varE (head names)) |]])
-      (_, exps) = foldl' build initData (zip (tail names) (init ts0))
-    doE $ [bindS (conP con (varP <$> names)) [| pure $(varE t) |]] <> (noBindS <$> exps)
+    let initData =
+          ([| 0 |], [[| pokeByteOff $(varE ptr) 0 $(varE (head names)) |]])
+        (_, exps) = foldl' build initData (zip (tail names) (init ts0))
+    doE $ [bindS (conP con (varP <$> names)) [| pure $(varE t) |]]
+       <> (noBindS <$> exps)
    where
     build (!offset, !l) (n, ty) = (offset', exp:l)
      where
