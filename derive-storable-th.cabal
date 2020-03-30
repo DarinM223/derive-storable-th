@@ -21,7 +21,7 @@ library
   exposed-modules:     Foreign.Storable.TH
   -- other-modules:
   -- other-extensions:
-  build-depends:       base >=4.13 && <4.14
+  build-depends:       base >=4.13 && <4.15
                      , template-haskell
   hs-source-dirs:      src
   ghc-options: -Wall
@@ -38,7 +38,7 @@ test-suite derive-storable-th-test
   type:                exitcode-stdio-1.0
   hs-source-dirs:      test
   main-is:             StorableTest.hs
-  build-depends:       base >=4.13 && <4.14
+  build-depends:       base >=4.13 && <4.15
                      , derive-storable-th
                      , HUnit
                      , vector
