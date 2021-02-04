@@ -6,7 +6,6 @@ import Prelude hiding (exp)
 import Data.Foldable (foldl')
 import Foreign.Storable (Storable (..))
 import Language.Haskell.TH
-import Language.Haskell.TH.Syntax
 
 deriveStorable :: Name -> Q [Dec]
 deriveStorable name = do
