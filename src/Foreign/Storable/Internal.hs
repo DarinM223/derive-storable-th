@@ -1,6 +1,7 @@
-module Foreign.Storable.Internal (nearestPowerOfTwo) where
+module Foreign.Storable.Internal (nearestPowerOfTwo, tr) where
 
 import Data.Bits
+import Debug.Trace
 
 nearestPowerOfTwo :: Int -> Int
 nearestPowerOfTwo v = v6 + 1
@@ -11,3 +12,6 @@ nearestPowerOfTwo v = v6 + 1
   v3 = v2 .|. v2 `shiftR` 2
   v2 = v1 .|. v1 `shiftR` 1
   v1 = v - 1
+
+tr :: Show a => a -> a
+tr a = trace (show a) a

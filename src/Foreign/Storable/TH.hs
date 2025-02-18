@@ -5,7 +5,7 @@ module Foreign.Storable.TH where
 import Prelude hiding (exp)
 import Data.Foldable (foldl')
 import Foreign.Storable (Storable (..))
-import Foreign.Storable.Internal (nearestPowerOfTwo)
+import Foreign.Storable.Internal (nearestPowerOfTwo, tr)
 import Language.Haskell.TH
 
 deriveStorable :: Name -> Q [Dec]
@@ -27,7 +27,7 @@ deriveStorable name = do
   [d|
     instance Storable $(conT name) where
       sizeOf _ = $(sizeOf' ts)
-      alignment _ = $(alignment' ts)
+      alignment _ = tr $(alignment' ts)
       peek = $(peek' conName ts)
       poke = $(poke' conName ts)
     |]
