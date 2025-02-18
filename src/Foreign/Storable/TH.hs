@@ -4,7 +4,7 @@ module Foreign.Storable.TH where
 
 import Prelude hiding (exp)
 import Foreign.Storable (Storable (..))
-import Foreign.Storable.Internal (roundUp)
+import Foreign.Storable.TH.Internal (roundUp)
 import Language.Haskell.TH
 
 deriveStorable :: Name -> Q [Dec]

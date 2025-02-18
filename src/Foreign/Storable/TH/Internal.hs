@@ -1,4 +1,4 @@
-module Foreign.Storable.Internal (roundUp) where
+module Foreign.Storable.TH.Internal (roundUp) where
 
 -- | Round the first parameter to a multiple of the second parameter.
 --
