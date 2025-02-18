@@ -1,18 +1,12 @@
-module Foreign.Storable.Internal (nearestPowerOfTwo, roundUp, tr) where
+module Foreign.Storable.Internal (roundUp) where
 
-import Data.Bits
-import Debug.Trace
-
-nearestPowerOfTwo :: Int -> Int
-nearestPowerOfTwo v = v6 + 1
- where
-  v6 = v5 .|. v5 `shiftR` 16
-  v5 = v4 .|. v4 `shiftR` 8
-  v4 = v3 .|. v3 `shiftR` 4
-  v3 = v2 .|. v2 `shiftR` 2
-  v2 = v1 .|. v1 `shiftR` 1
-  v1 = v - 1
-
+-- | Round the first parameter to a multiple of the second parameter.
+--
+-- Examples:
+-- > roundUp 5 4
+-- 8
+-- > roundUp 14 4
+-- 16
 roundUp :: Int -> Int -> Int
 roundUp num 0 = num
 roundUp num mult
@@ -20,6 +14,3 @@ roundUp num mult
   | otherwise = num + mult - remainder
  where
   remainder = num `rem` mult
-
-tr :: Show a => String -> a -> a
-tr desc a = trace (desc ++ ": " ++ show a) a

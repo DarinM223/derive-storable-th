@@ -4,7 +4,7 @@ module Foreign.Storable.TH where
 
 import Prelude hiding (exp)
 import Foreign.Storable (Storable (..))
-import Foreign.Storable.Internal (roundUp, tr)
+import Foreign.Storable.Internal (roundUp)
 import Language.Haskell.TH
 
 deriveStorable :: Name -> Q [Dec]
@@ -26,7 +26,7 @@ deriveStorable name = do
   [d|
     instance Storable $(conT name) where
       sizeOf _ = $(sizeOf' ts)
-      alignment _ = tr "alignment" $(alignment' ts)
+      alignment _ = $(alignment' ts)
       peek = $(peek' conName ts)
       poke = $(poke' conName ts)
     |]
@@ -54,7 +54,7 @@ deriveStorable name = do
    where
     go _ expr [] = expr
     go !offset !expr (t:ts) =
-      go offset' [| $expr <*> peekByteOff $(varE ptr) (tr "offset" $offset') |] ts
+      go offset' [| $expr <*> peekByteOff $(varE ptr) $offset' |] ts
      where offset' = [| $offset + roundUp $(toSizeOf t) $(alignment' ts0) |]
 
   poke' :: Name -> [BangType] -> Q Exp
