@@ -33,7 +33,7 @@ deriveStorable name = do
     |]
  where
   cons e acc = [| $e : $acc |]
-  toSizeOf (_, t) = [| nearestPowerOfTwo (sizeOf (undefined :: $(pure t))) |]
+  toSizeOf (_, t) = [| sizeOf (undefined :: $(pure t)) |]
 
   sizeOf' :: [BangType] -> Q Exp
   sizeOf' = foldl' build [| 0 |]
@@ -41,7 +41,7 @@ deriveStorable name = do
 
   alignment' :: [BangType] -> Q Exp
   alignment' [] = [| 0 |]
-  alignment' ts = [| maximum $(foldr cons [| [] |] $ fmap toSizeOf ts) |]
+  alignment' ts = [| nearestPowerOfTwo (maximum $(foldr cons [| [] |] $ fmap toSizeOf ts)) |]
 
   peek' :: Name -> [BangType] -> Q Exp
   peek' con [] = LamE [WildP] <$> [| return $(conE con) |]
@@ -55,7 +55,7 @@ deriveStorable name = do
     go _ expr [] = expr
     go !offset !expr (t:ts) =
       go offset' [| $expr <*> peekByteOff $(varE ptr) $offset' |] ts
-     where offset' = [| $offset + $(toSizeOf t) |]
+     where offset' = [| nearestPowerOfTwo ($offset + $(toSizeOf t)) |]
 
   poke' :: Name -> [BangType] -> Q Exp
   poke' _ []   = LamE [WildP, WildP] <$> [| return () |]
@@ -74,5 +74,5 @@ deriveStorable name = do
    where
     build (!offset, !l) (n, ty) = (offset', exp:l)
      where
-      offset' = [| $offset + $(toSizeOf ty) |]
+      offset' = [| nearestPowerOfTwo ($offset + $(toSizeOf ty)) |]
       exp = [| pokeByteOff $(varE ptr) $offset' $(varE n) |]
