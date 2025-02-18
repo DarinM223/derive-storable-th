@@ -1,4 +1,4 @@
-module Foreign.Storable.Internal (nearestPowerOfTwo, tr) where
+module Foreign.Storable.Internal (nearestPowerOfTwo, roundUp, tr) where
 
 import Data.Bits
 import Debug.Trace
@@ -13,5 +13,13 @@ nearestPowerOfTwo v = v6 + 1
   v2 = v1 .|. v1 `shiftR` 1
   v1 = v - 1
 
-tr :: Show a => a -> a
-tr a = trace (show a) a
+roundUp :: Int -> Int -> Int
+roundUp num 0 = num
+roundUp num mult
+  | remainder == 0 = num
+  | otherwise = num + mult - remainder
+ where
+  remainder = num `rem` mult
+
+tr :: Show a => String -> a -> a
+tr desc a = trace (desc ++ ": " ++ show a) a

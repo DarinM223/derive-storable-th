@@ -3,9 +3,8 @@
 module Foreign.Storable.TH where
 
 import Prelude hiding (exp)
-import Data.Foldable (foldl')
 import Foreign.Storable (Storable (..))
-import Foreign.Storable.Internal (nearestPowerOfTwo, tr)
+import Foreign.Storable.Internal (roundUp, tr)
 import Language.Haskell.TH
 
 deriveStorable :: Name -> Q [Dec]
@@ -27,21 +26,22 @@ deriveStorable name = do
   [d|
     instance Storable $(conT name) where
       sizeOf _ = $(sizeOf' ts)
-      alignment _ = tr $(alignment' ts)
+      alignment _ = tr "alignment" $(alignment' ts)
       peek = $(peek' conName ts)
       poke = $(poke' conName ts)
     |]
  where
   cons e acc = [| $e : $acc |]
   toSizeOf (_, t) = [| sizeOf (undefined :: $(pure t)) |]
+  toAlignment (_, t) = [| alignment (undefined :: $(pure t)) |]
 
   sizeOf' :: [BangType] -> Q Exp
-  sizeOf' = foldl' build [| 0 |]
-   where build acc t = [| $(toSizeOf t) + $acc |]
+  sizeOf' ts = foldl' build [| 0 |] ts
+   where build acc t = [| roundUp $(toSizeOf t) $(alignment' ts) + $acc |]
 
   alignment' :: [BangType] -> Q Exp
   alignment' [] = [| 0 |]
-  alignment' ts = [| nearestPowerOfTwo (maximum $(foldr cons [| [] |] $ fmap toSizeOf ts)) |]
+  alignment' ts = [| maximum $(foldr cons [| [] |] $ fmap toAlignment ts) |]
 
   peek' :: Name -> [BangType] -> Q Exp
   peek' con [] = LamE [WildP] <$> [| return $(conE con) |]
@@ -54,8 +54,8 @@ deriveStorable name = do
    where
     go _ expr [] = expr
     go !offset !expr (t:ts) =
-      go offset' [| $expr <*> peekByteOff $(varE ptr) $offset' |] ts
-     where offset' = [| nearestPowerOfTwo ($offset + $(toSizeOf t)) |]
+      go offset' [| $expr <*> peekByteOff $(varE ptr) (tr "offset" $offset') |] ts
+     where offset' = [| $offset + roundUp $(toSizeOf t) $(alignment' ts0) |]
 
   poke' :: Name -> [BangType] -> Q Exp
   poke' _ []   = LamE [WildP, WildP] <$> [| return () |]
@@ -66,13 +66,16 @@ deriveStorable name = do
   poke'' :: Name -> Name -> Name -> [BangType] -> Q Exp
   poke'' ptr t con ts0 = do
     names <- traverse (\_ -> newName "temp") ts0
-    let initData =
-          ([| 0 |], [[| pokeByteOff $(varE ptr) 0 $(varE (head names)) |]])
-        (_, exps) = foldl' build initData (zip (tail names) (init ts0))
-    doE $ [bindS (conP con (varP <$> names)) [| pure $(varE t) |]]
-       <> (noBindS <$> exps)
+    case names of
+      hd : tl -> do
+        let initData =
+              ([| 0 |], [[| pokeByteOff $(varE ptr) 0 $(varE hd) |]])
+            (_, exps) = foldl' build initData (zip tl (init ts0))
+        doE $ [bindS (conP con (varP <$> names)) [| pure $(varE t) |]]
+           <> (noBindS <$> exps)
+      _ -> error "Not enough names"
    where
     build (!offset, !l) (n, ty) = (offset', exp:l)
      where
-      offset' = [| nearestPowerOfTwo ($offset + $(toSizeOf ty)) |]
+      offset' = [| $offset + roundUp $(toSizeOf ty) $(alignment' ts0) |]
       exp = [| pokeByteOff $(varE ptr) $offset' $(varE n) |]
