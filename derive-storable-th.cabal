@@ -19,7 +19,7 @@ extra-source-files:  CHANGELOG.md
 
 library
   exposed-modules:     Foreign.Storable.TH
-  -- other-modules:
+  other-modules:       Foreign.Storable.Internal
   -- other-extensions:
   build-depends:       base >=4.13 && <5
                      , template-haskell

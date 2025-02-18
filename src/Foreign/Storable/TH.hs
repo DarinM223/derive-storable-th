@@ -5,6 +5,7 @@ module Foreign.Storable.TH where
 import Prelude hiding (exp)
 import Data.Foldable (foldl')
 import Foreign.Storable (Storable (..))
+import Foreign.Storable.Internal (nearestPowerOfTwo)
 import Language.Haskell.TH
 
 deriveStorable :: Name -> Q [Dec]
@@ -32,7 +33,7 @@ deriveStorable name = do
     |]
  where
   cons e acc = [| $e : $acc |]
-  toSizeOf (_, t) = [| sizeOf (undefined :: $(pure t)) |]
+  toSizeOf (_, t) = [| nearestPowerOfTwo (sizeOf (undefined :: $(pure t))) |]
 
   sizeOf' :: [BangType] -> Q Exp
   sizeOf' = foldl' build [| 0 |]
